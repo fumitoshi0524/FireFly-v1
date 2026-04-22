@@ -20,6 +20,7 @@ from trainer.train_util import (
     init_model,
 )
 from FireFly.fireflyoptim import FireFlyProb
+from FireFly.bitLinear import collect_bitlinear_modules
 from itertools import islice
 
 warnings.filterwarnings("ignore")
@@ -162,7 +163,7 @@ def main():
     parser.add_argument(
         "--max_seq_length",
         type=int,
-        default=2048,
+        default=340,
         help="Maximum sequence length",
     )
     parser.add_argument(
@@ -236,6 +237,7 @@ def main():
         vote_interval=args.vote_interval,
         vote_threshold=args.vote_threshold,
         clip_grad=args.clip_grad,
+        bit_modules=collect_bitlinear_modules(model),
     )
 
     start_epoch, start_step = 0, 0
