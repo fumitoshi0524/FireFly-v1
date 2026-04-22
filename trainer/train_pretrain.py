@@ -9,7 +9,6 @@ import time
 import warnings
 import torch
 
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from model.model_firefly import FireFlyConfig
 from dataset.llm_dataset import PretrainDataset
@@ -57,12 +56,8 @@ def train_epoch(
             param_group["lr"] = lr
 
         with torch.amp.autocast(device_type=args.device, dtype=torch.bfloat16):
-            logits = model(input_ids, labels=labels)["logits"]
-            loss = F.cross_entropy(
-                logits.reshape(-1, logits.size(-1)),
-                labels.reshape(-1),
-                ignore_index=-100,
-            )
+            outputs = model(input_ids, labels=labels)
+            loss = outputs.loss
 
         loss.backward()
         optimizer.step()
@@ -98,7 +93,7 @@ def train_epoch(
             )
             model.train()
 
-        del input_ids, labels, logits, loss
+        del input_ids, labels, outputs, loss
 
 
 def main():
