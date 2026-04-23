@@ -214,6 +214,7 @@ def main():
         hidden_size=args.hidden_size,
         num_hidden_layers=args.num_hidden_layers,
     )
+    args.lm_config = lm_config
     ckp_data = (
         lm_checkpoint(lm_config, weight=args.save_weight, save_dir=args.save_dir)
         if args.from_resume == 1
