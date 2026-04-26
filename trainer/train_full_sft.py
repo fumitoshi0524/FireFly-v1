@@ -60,6 +60,7 @@ def train_epoch(
         last_step = step
         input_ids = input_ids.to(args.device)
         labels = labels.to(args.device)
+        attention_mask = input_ids.ne(args.pad_token_id)
 
         lr = get_lr(
             epoch * iters + step,
@@ -71,7 +72,7 @@ def train_epoch(
             param_group["lr"] = lr
 
         with torch.amp.autocast(device_type=args.device, dtype=torch.bfloat16):
-            outputs = model(input_ids, labels=labels)
+            outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
             loss = outputs.loss
 
         loss.backward()
@@ -271,6 +272,11 @@ def main():
         tokenizer_path=resolve_project_path("model"),
         save_dir=args.save_dir,
         device=args.device,
+    )
+    args.pad_token_id = (
+        tokenizer.pad_token_id
+        if tokenizer.pad_token_id is not None
+        else tokenizer.eos_token_id
     )
     train_ds = SFTDataset(args.data_path, tokenizer, max_length=args.max_seq_length)
     optimizer = FireFlyProb(

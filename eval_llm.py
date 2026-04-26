@@ -23,9 +23,16 @@ def init_model(args):
             )
         )
         checkpoint_path = f"./{args.save_dir}/{args.weight}_{args.hidden_size}.pth"
-        model.load_state_dict(
-            torch.load(checkpoint_path, map_location=args.device), strict=False
-        )
+        try:
+            model.load_state_dict(
+                torch.load(checkpoint_path, map_location=args.device), strict=True
+            )
+        except RuntimeError as exc:
+            raise RuntimeError(
+                "Checkpoint structure does not match current model config. "
+                "Use the same hidden_size/num_hidden_layers as training "
+                "(pretrain/full_sft defaults are hidden_size=768, num_hidden_layers=12)."
+            ) from exc
     else:
         model = AutoModelForCausalLM.from_pretrained(
             args.load_from,
@@ -40,18 +47,23 @@ def init_model(args):
 
 
 def build_input_text(tokenizer, conversation, prompt, is_pretrain):
-    if is_pretrain:
-        return tokenizer.bos_token + prompt
-
     try:
         return tokenizer.apply_chat_template(
             conversation,
             tokenize=False,
             add_generation_prompt=True,
         )
-    except TypeError:
+    except (AttributeError, TypeError):
         # Some tokenizers only support a minimal chat template signature.
-        return tokenizer.apply_chat_template(conversation, tokenize=False)
+        try:
+            return tokenizer.apply_chat_template(conversation, tokenize=False)
+        except (AttributeError, TypeError):
+            if is_pretrain:
+                return (
+                    f"{tokenizer.bos_token}user\n{prompt}{tokenizer.eos_token}\n"
+                    f"{tokenizer.bos_token}assistant\n"
+                )
+            return tokenizer.bos_token + prompt
 
 
 def main():
@@ -82,7 +94,7 @@ def main():
     )
     parser.add_argument(
         "--num_hidden_layers",
-        default=8,
+        default=12,
         type=int,
         help="Number of transformer layers in local FireFly model.",
     )
