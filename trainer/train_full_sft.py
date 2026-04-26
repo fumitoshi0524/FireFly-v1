@@ -303,6 +303,9 @@ def main():
         start_epoch += start_step // iters_per_epoch
         start_step = start_step % iters_per_epoch
     if start_epoch >= args.epochs:
+        if ckp_data:
+            save_model_weight(model, args)
+            Logger("resume: exported final weight to save_dir")
         Logger("resume: checkpoint already reached target epochs, nothing to train")
         return
 
