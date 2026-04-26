@@ -27,6 +27,15 @@ from itertools import islice
 warnings.filterwarnings("ignore")
 
 
+def save_model_weight(model, args):
+    weight_path = f"{args.save_dir}/{args.save_weight}_{args.lm_config.hidden_size}.pth"
+    weight_tmp = weight_path + ".tmp"
+    state_dict = {k: v.cpu() for k, v in model.state_dict().items()}
+    torch.save(state_dict, weight_tmp)
+    os.replace(weight_tmp, weight_path)
+    del state_dict
+
+
 def train_epoch(
     epoch,
     loader,
@@ -81,12 +90,13 @@ def train_epoch(
 
         if step % args.save_interval == 0:
             model.eval()
+            save_model_weight(model, args)
             lm_checkpoint(
                 model=model,
                 optimizer=optimizer,
                 epoch=epoch,
                 step=step,
-                save_dir=args.save_dir,
+                save_dir=args.checkpoint_dir,
                 lm_config=args.lm_config,
                 weight=args.save_weight,
             )
@@ -96,12 +106,13 @@ def train_epoch(
 
     if last_step > 0:
         model.eval()
+        save_model_weight(model, args)
         lm_checkpoint(
             model=model,
             optimizer=optimizer,
             epoch=epoch,
             step=last_step,
-            save_dir=args.save_dir,
+            save_dir=args.checkpoint_dir,
             lm_config=args.lm_config,
             weight=args.save_weight,
         )
@@ -217,6 +228,8 @@ def main():
     setup_seed(42)
 
     os.makedirs(args.save_dir, exist_ok=True)
+    args.checkpoint_dir = "checkpoints"
+    os.makedirs(args.checkpoint_dir, exist_ok=True)
     lm_config = FireFlyConfig(
         hidden_size=args.hidden_size,
         num_hidden_layers=args.num_hidden_layers,
@@ -224,7 +237,9 @@ def main():
     args.lm_config = lm_config
 
     ckp_data = (
-        lm_checkpoint(lm_config, weight=args.save_weight, save_dir=args.save_dir)
+        lm_checkpoint(
+            lm_config, weight=args.save_weight, save_dir=args.checkpoint_dir
+        )
         if args.from_resume == 1
         else None
     )
