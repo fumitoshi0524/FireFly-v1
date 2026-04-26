@@ -5,6 +5,7 @@ __package__ = "trainer"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import argparse
+import math
 import time
 import warnings
 import torch
@@ -37,8 +38,10 @@ def train_epoch(
     model=None,
 ):
     start_time = time.time()
+    last_step = 0
 
     for step, (input_ids, labels) in enumerate(loader, start=start_step + 1):
+        last_step = step
         input_ids = input_ids.to(args.device)
         labels = labels.to(args.device)
 
@@ -76,7 +79,7 @@ def train_epoch(
                     step=epoch * iters + step,
                 )
 
-        if step % args.save_interval == 0 or step == iters:
+        if step % args.save_interval == 0:
             model.eval()
             lm_checkpoint(
                 model=model,
@@ -91,13 +94,26 @@ def train_epoch(
 
         del input_ids, labels, outputs, loss
 
+    if last_step > 0:
+        model.eval()
+        lm_checkpoint(
+            model=model,
+            optimizer=optimizer,
+            epoch=epoch,
+            step=last_step,
+            save_dir=args.save_dir,
+            lm_config=args.lm_config,
+            weight=args.save_weight,
+        )
+        model.train()
+
 
 def main():
     parser = argparse.ArgumentParser(description="FireFly Full SFT")
     parser.add_argument(
         "--save_dir",
         type=str,
-        default="../checkpoints",
+        default="out",
         help="Checkpoint save directory",
     )
     parser.add_argument(
@@ -262,7 +278,7 @@ def main():
         train_epoch(
             epoch,
             loader,
-            len(train_ds) // args.batch_size,
+            math.ceil(len(train_ds) / args.batch_size),
             start_step,
             swanlab=swanlab if args.use_swanlab else None,
             args=args,

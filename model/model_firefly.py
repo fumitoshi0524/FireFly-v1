@@ -392,7 +392,10 @@ class FireFlyForCausalLM(PreTrainedModel, GenerationMixin):
             if isinstance(logits_to_keep, int)
             else logits_to_keep
         )
-        logits = self.lm_head(hidden_states[:, slice_indices, :])
+        logits_input = hidden_states[:, slice_indices, :]
+        if logits_input.dtype != self.lm_head.weight.dtype:
+            logits_input = logits_input.to(self.lm_head.weight.dtype)
+        logits = self.lm_head(logits_input)
         loss = None
         if labels is not None:
             x, y = logits[..., :-1, :].contiguous(), labels[..., 1:].contiguous()
