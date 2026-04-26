@@ -216,7 +216,7 @@ def main():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="dataset/pretrain_t2t.jsonl",
+        default="dataset/pretrain_t2t_mini.jsonl",
         help="Path to the training data",
     )
     parser.add_argument(

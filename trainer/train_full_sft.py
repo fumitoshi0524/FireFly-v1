@@ -208,7 +208,7 @@ def main():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="dataset/sft_t2t.jsonl",
+        default="dataset/sft_t2t_mini.jsonl",
         help="Path to the SFT data",
     )
     parser.add_argument(
