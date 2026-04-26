@@ -228,7 +228,9 @@ class Attention(nn.Module):
                     (seq_len, seq_len), float("-inf"), device=scores.device
                 ).triu(1)
             if attention_mask is not None:
-                scores += (1.0 - attention_mask.unsqueeze(1).unsqueeze(2)) * -1e9
+                scores = scores.masked_fill(
+                    ~attention_mask.unsqueeze(1).unsqueeze(2), float("-inf")
+                )
             output = (
                 self.attn_dropout(F.softmax(scores.float(), dim=-1).type_as(xq)) @ xv
             )
