@@ -102,11 +102,13 @@ def train_epoch(
         if step % args.save_interval == 0:
             model.eval()
             save_model_weight(model, args)
+            resume_epoch = epoch + 1 if step >= iters else epoch
+            resume_step = 0 if step >= iters else step
             lm_checkpoint(
                 model=model,
                 optimizer=optimizer,
-                epoch=epoch,
-                step=step,
+                epoch=resume_epoch,
+                step=resume_step,
                 save_dir=args.checkpoint_dir,
                 lm_config=args.lm_config,
                 weight=args.save_weight,
@@ -118,11 +120,13 @@ def train_epoch(
     if last_step > 0:
         model.eval()
         save_model_weight(model, args)
+        resume_epoch = epoch + 1 if last_step >= iters else epoch
+        resume_step = 0 if last_step >= iters else last_step
         lm_checkpoint(
             model=model,
             optimizer=optimizer,
-            epoch=epoch,
-            step=last_step,
+            epoch=resume_epoch,
+            step=resume_step,
             save_dir=args.checkpoint_dir,
             lm_config=args.lm_config,
             weight=args.save_weight,
@@ -295,10 +299,25 @@ def main():
     if ckp_data:
         model.load_state_dict(ckp_data["model"])
         optimizer.load_state_dict(ckp_data["optimizer"])
-        start_epoch = ckp_data.get("epoch", 0)
-        start_step = ckp_data.get("step", 0)
+        start_epoch = int(ckp_data.get("epoch", 0))
+        start_step = int(ckp_data.get("step", 0))
+
+    iters_per_epoch = math.ceil(len(train_ds) / args.batch_size)
+    legacy_iters_per_epoch = len(train_ds) // args.batch_size
+    has_partial_last_batch = (len(train_ds) % args.batch_size) != 0
+    if has_partial_last_batch and start_step == legacy_iters_per_epoch:
+        start_epoch += 1
+        start_step = 0
+        Logger("resume: migrated legacy epoch-end checkpoint to next epoch")
+    if start_step >= iters_per_epoch:
+        start_epoch += start_step // iters_per_epoch
+        start_step = start_step % iters_per_epoch
+    if start_epoch >= args.epochs:
+        Logger("resume: checkpoint already reached target epochs, nothing to train")
+        return
 
     for epoch in range(start_epoch, args.epochs):
+        epoch_start_step = start_step if epoch == start_epoch else 0
         setup_seed(42 + epoch)
         loader = DataLoader(
             train_ds,
@@ -306,15 +325,15 @@ def main():
             shuffle=True,
             pin_memory=True,
         )
-        if epoch == start_epoch and start_step > 0:
-            Logger(f"resume: skip first {start_step} batches")
-            loader = islice(loader, start_step, None)
+        if epoch_start_step > 0:
+            Logger(f"resume: skip first {epoch_start_step} batches")
+            loader = islice(loader, epoch_start_step, None)
 
         train_epoch(
             epoch,
             loader,
-            math.ceil(len(train_ds) / args.batch_size),
-            start_step,
+            iters_per_epoch,
+            epoch_start_step,
             swanlab=swanlab if args.use_swanlab else None,
             args=args,
             optimizer=optimizer,
