@@ -25,6 +25,13 @@ from FireFly.bitLinear import collect_bitlinear_modules
 from itertools import islice
 
 warnings.filterwarnings("ignore")
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def resolve_project_path(path):
+    if os.path.isabs(path):
+        return path
+    return os.path.abspath(os.path.join(PROJECT_ROOT, path))
 
 
 def save_model_weight(model, args):
@@ -196,7 +203,7 @@ def main():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="../dataset/sft_t2t.jsonl",
+        default="dataset/sft_t2t.jsonl",
         help="Path to the SFT data",
     )
     parser.add_argument(
@@ -227,8 +234,10 @@ def main():
     args = parser.parse_args()
     setup_seed(42)
 
+    args.save_dir = resolve_project_path(args.save_dir)
+    args.data_path = resolve_project_path(args.data_path)
     os.makedirs(args.save_dir, exist_ok=True)
-    args.checkpoint_dir = "checkpoints"
+    args.checkpoint_dir = resolve_project_path("checkpoints")
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     lm_config = FireFlyConfig(
         hidden_size=args.hidden_size,
@@ -257,6 +266,7 @@ def main():
     model, tokenizer = init_model(
         lm_config,
         from_weight=args.from_weight,
+        tokenizer_path=resolve_project_path("model"),
         save_dir=args.save_dir,
         device=args.device,
     )
