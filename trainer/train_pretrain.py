@@ -164,10 +164,10 @@ def main():
         help="Base ratio for FireFly optimizer (between 0 and 1)",
     )
     parser.add_argument(
-        "--vote_interval", type=int, default=32, help="Interval for FireFly voting"
+        "--vote_interval", type=int, default=4, help="Interval for FireFly voting"
     )
     parser.add_argument(
-        "--vote_threshold", type=float, default=24, help="Threshold for FireFly voting"
+        "--vote_threshold", type=float, default=3, help="Threshold for FireFly voting"
     )
     parser.add_argument(
         "--device",
@@ -258,9 +258,7 @@ def main():
     )
     args.lm_config = lm_config
     ckp_data = (
-        lm_checkpoint(
-            lm_config, weight=args.save_weight, save_dir=args.checkpoint_dir
-        )
+        lm_checkpoint(lm_config, weight=args.save_weight, save_dir=args.checkpoint_dir)
         if args.from_resume == 1
         else None
     )
