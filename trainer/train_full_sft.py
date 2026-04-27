@@ -194,13 +194,13 @@ def main():
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=1152,
+        default=1024,
         help="Hidden size of the model",
     )
     parser.add_argument(
         "--num_hidden_layers",
         type=int,
-        default=20,
+        default=16,
         help="Number of transformer layers",
     )
     parser.add_argument(

@@ -66,13 +66,13 @@ def main():
     )
     parser.add_argument(
         "--hidden_size",
-        default=1152,
+        default=1024,
         type=int,
         help="Hidden size of local FireFly model.",
     )
     parser.add_argument(
         "--num_hidden_layers",
-        default=20,
+        default=16,
         type=int,
         help="Number of transformer layers in local FireFly model.",
     )
