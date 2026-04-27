@@ -150,7 +150,7 @@ def main():
         "--epochs", type=int, default=2, help="Number of training epochs"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=32, help="Training batch size per GPU"
+        "--batch_size", type=int, default=4, help="Training batch size per GPU"
     )
     parser.add_argument(
         "--learning_rate", type=float, default=1e-4, help="Initial learning rate"
@@ -161,20 +161,14 @@ def main():
     parser.add_argument(
         "--accumulation_steps",
         type=int,
-        default=0,
-        help="Gradient accumulation steps. 0 means use vote_interval.",
+        default=16,
+        help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
         "--base_ratio",
         type=float,
         default=0.02,
         help="Base ratio for FireFly optimizer (between 0 and 1)",
-    )
-    parser.add_argument(
-        "--vote_interval", type=int, default=8, help="Interval for FireFly voting"
-    )
-    parser.add_argument(
-        "--vote_threshold", type=float, default=5, help="Threshold for FireFly voting"
     )
     parser.add_argument(
         "--device",
@@ -200,13 +194,13 @@ def main():
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=768,
+        default=1152,
         help="Hidden size of the model",
     )
     parser.add_argument(
         "--num_hidden_layers",
         type=int,
-        default=12,
+        default=20,
         help="Number of transformer layers",
     )
     parser.add_argument(
@@ -247,11 +241,7 @@ def main():
     )
 
     args = parser.parse_args()
-    args.accumulation_steps = (
-        args.vote_interval
-        if int(args.accumulation_steps) <= 0
-        else int(args.accumulation_steps)
-    )
+    args.accumulation_steps = max(1, int(args.accumulation_steps))
     setup_seed(42)
 
     args.save_dir = resolve_project_path(args.save_dir)
@@ -293,9 +283,6 @@ def main():
         model.parameters(),
         lr_dense=args.learning_rate,
         base_ratio=args.base_ratio,
-        vote_interval=args.vote_interval,
-        vote_threshold=args.vote_threshold,
-        vote_scale=args.accumulation_steps,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )

@@ -43,6 +43,7 @@ def init_model(args):
     model = model.eval().to(args.device)
     return model, tokenizer
 
+
 def main():
     parser = argparse.ArgumentParser(description="FireFly LLM evaluation")
     parser.add_argument(
@@ -65,13 +66,13 @@ def main():
     )
     parser.add_argument(
         "--hidden_size",
-        default=768,
+        default=1152,
         type=int,
         help="Hidden size of local FireFly model.",
     )
     parser.add_argument(
         "--num_hidden_layers",
-        default=12,
+        default=20,
         type=int,
         help="Number of transformer layers in local FireFly model.",
     )
