@@ -55,12 +55,13 @@ def train_epoch(
 ):
     start_time = time.time()
     last_step = 0
+    accumulation_steps = max(1, int(args.accumulation_steps))
+    optimizer.zero_grad(set_to_none=True)
 
     for step, (input_ids, labels) in enumerate(loader, start=start_step + 1):
         last_step = step
         input_ids = input_ids.to(args.device)
         labels = labels.to(args.device)
-        attention_mask = input_ids.ne(args.pad_token_id)
 
         lr = get_lr(
             epoch * iters + step,
@@ -72,24 +73,27 @@ def train_epoch(
             param_group["lr"] = lr
 
         with torch.amp.autocast(device_type=args.device, dtype=torch.bfloat16):
-            outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-            loss = outputs.loss
+            outputs = model(input_ids, labels=labels)
+            loss = outputs.loss / accumulation_steps
 
         loss.backward()
-        optimizer.step()
-        optimizer.zero_grad(set_to_none=True)
+        local_step = step - start_step
+        should_step = (local_step % accumulation_steps == 0) or (step == iters)
+        if should_step:
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
 
         if step % args.log_interval == 0 or step == iters:
             spend_time = time.time() - start_time
             eta_time = spend_time / max(1, step - start_step) * (iters - step) // 60
             Logger(
                 f"Epoch:[{epoch + 1}/{args.epochs}]({step}/{iters}), "
-                f"loss: {loss.item():.4f}, lr: {lr:.8f}, eta: {eta_time:.1f}min"
+                f"loss: {loss.item() * accumulation_steps:.4f}, lr: {lr:.8f}, eta: {eta_time:.1f}min"
             )
             if swanlab is not None:
                 swanlab.log(
                     {
-                        "train/loss": loss.item(),
+                        "train/loss": loss.item() * accumulation_steps,
                         "train/lr": lr,
                         "train/eta_min": eta_time,
                     },
@@ -155,16 +159,22 @@ def main():
         "--warmup_steps", type=int, default=2000, help="Number of warmup steps"
     )
     parser.add_argument(
+        "--accumulation_steps",
+        type=int,
+        default=0,
+        help="Gradient accumulation steps. 0 means use vote_interval.",
+    )
+    parser.add_argument(
         "--base_ratio",
         type=float,
         default=0.02,
         help="Base ratio for FireFly optimizer (between 0 and 1)",
     )
     parser.add_argument(
-        "--vote_interval", type=int, default=4, help="Interval for FireFly voting"
+        "--vote_interval", type=int, default=8, help="Interval for FireFly voting"
     )
     parser.add_argument(
-        "--vote_threshold", type=float, default=3, help="Threshold for FireFly voting"
+        "--vote_threshold", type=float, default=5, help="Threshold for FireFly voting"
     )
     parser.add_argument(
         "--device",
@@ -237,6 +247,11 @@ def main():
     )
 
     args = parser.parse_args()
+    args.accumulation_steps = (
+        args.vote_interval
+        if int(args.accumulation_steps) <= 0
+        else int(args.accumulation_steps)
+    )
     setup_seed(42)
 
     args.save_dir = resolve_project_path(args.save_dir)
@@ -273,11 +288,6 @@ def main():
         save_dir=args.save_dir,
         device=args.device,
     )
-    args.pad_token_id = (
-        tokenizer.pad_token_id
-        if tokenizer.pad_token_id is not None
-        else tokenizer.eos_token_id
-    )
     train_ds = SFTDataset(args.data_path, tokenizer, max_length=args.max_seq_length)
     optimizer = FireFlyProb(
         model.parameters(),
@@ -285,6 +295,7 @@ def main():
         base_ratio=args.base_ratio,
         vote_interval=args.vote_interval,
         vote_threshold=args.vote_threshold,
+        vote_scale=args.accumulation_steps,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )

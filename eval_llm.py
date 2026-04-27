@@ -41,30 +41,7 @@ def init_model(args):
 
     get_model_params(model)
     model = model.eval().to(args.device)
-    if args.device.startswith("cuda"):
-        model = model.half()
     return model, tokenizer
-
-
-def build_input_text(tokenizer, conversation, prompt, is_pretrain):
-    try:
-        return tokenizer.apply_chat_template(
-            conversation,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-    except (AttributeError, TypeError):
-        # Some tokenizers only support a minimal chat template signature.
-        try:
-            return tokenizer.apply_chat_template(conversation, tokenize=False)
-        except (AttributeError, TypeError):
-            if is_pretrain:
-                return (
-                    f"{tokenizer.bos_token}user\n{prompt}{tokenizer.eos_token}\n"
-                    f"{tokenizer.bos_token}assistant\n"
-                )
-            return tokenizer.bos_token + prompt
-
 
 def main():
     parser = argparse.ArgumentParser(description="FireFly LLM evaluation")
@@ -175,12 +152,14 @@ def main():
         conversation = conversation[-args.history_turns :] if args.history_turns else []
         conversation.append({"role": "user", "content": prompt})
 
-        input_text = build_input_text(
-            tokenizer,
-            conversation,
-            prompt,
-            is_pretrain=("pretrain" in args.weight),
-        )
+        if "pretrain" in args.weight:
+            input_text = tokenizer.bos_token + prompt
+        else:
+            input_text = tokenizer.apply_chat_template(
+                conversation,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
         inputs = tokenizer(input_text, return_tensors="pt", truncation=True).to(
             args.device
         )
