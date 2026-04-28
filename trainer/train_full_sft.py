@@ -166,10 +166,10 @@ def main():
         help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
-        "--snr_threshold",
+        "--step_size",
         type=float,
         default=1.0,
-        help="SNR threshold for ternary weight flips (|m_hat|/sqrt(v_hat) must exceed this). 1.0 = signal > noise.",
+        help="Stochastic rounding step size for ternary weight flips. P(flip) = clamp(η·|m_hat|, 0, 1). Larger = more aggressive.",
     )
     parser.add_argument(
         "--device",
@@ -283,7 +283,7 @@ def main():
     optimizer = FireFlyOptim(
         model.parameters(),
         lr_dense=args.learning_rate,
-        snr_threshold=args.snr_threshold,
+        step_size=args.step_size,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )

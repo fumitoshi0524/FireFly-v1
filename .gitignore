@@ -30,4 +30,6 @@ out/
 # swanlab generated files
 swanlog/
 
+# cc
 CLAUDE.md
+.claude/
