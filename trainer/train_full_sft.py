@@ -166,10 +166,10 @@ def main():
         help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
-        "--step_size",
+        "--lr_ternary",
         type=float,
-        default=10.0,
-        help="Stochastic rounding step size for ternary weight flips. P(flip) = clamp(η·|m_hat|, 0, 1). Larger = more aggressive.",
+        default=0.01,
+        help="Learning rate for ternary weight updates via DQT stochastic rounding. P(flip) = clamp(|lr * m_hat/√v_hat|, 0, 1).",
     )
     parser.add_argument(
         "--device",
@@ -283,7 +283,7 @@ def main():
     optimizer = FireFlyOptim(
         model.parameters(),
         lr_dense=args.learning_rate,
-        step_size=args.step_size,
+        lr_ternary=args.lr_ternary,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )
