@@ -69,15 +69,9 @@ def train_epoch(
             args.learning_rate,
             warmup_steps=args.warmup_steps,
         )
-        base_ratio = get_lr(
-            epoch * iters + step,
-            args.epochs * iters,
-            args.base_ratio,
-            warmup_steps=0,  # no warmup — start at peak for max early exploration
-        )
+
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
-            param_group["base_ratio"] = base_ratio
 
         with torch.amp.autocast(device_type=args.device, dtype=torch.bfloat16):
             outputs = model(input_ids, labels=labels)
@@ -95,15 +89,13 @@ def train_epoch(
             eta_time = spend_time / max(1, step - start_step) * (iters - step) // 60
             Logger(
                 f"Epoch:[{epoch + 1}/{args.epochs}]({step}/{iters}), "
-                f"loss: {loss.item() * accumulation_steps:.4f}, lr: {lr:.8f}, "
-                f"br: {base_ratio:.6f}, eta: {eta_time:.1f}min"
+                f"loss: {loss.item() * accumulation_steps:.4f}, lr: {lr:.8f}, eta: {eta_time:.1f}min"
             )
             if swanlab is not None:
                 swanlab.log(
                     {
                         "train/loss": loss.item() * accumulation_steps,
                         "train/lr": lr,
-                        "train/base_ratio": base_ratio,
                         "train/eta_min": eta_time,
                     },
                     step=epoch * iters + step,
@@ -174,10 +166,10 @@ def main():
         help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
-        "--base_ratio",
+        "--snr_threshold",
         type=float,
-        default=0.01,
-        help="Peak fraction of ternary weights to flip per optimizer step (follows warmup+cosine schedule)",
+        default=1.0,
+        help="SNR threshold for ternary weight flips (|m_hat|/sqrt(v_hat) must exceed this). 1.0 = signal > noise.",
     )
     parser.add_argument(
         "--device",
@@ -291,7 +283,7 @@ def main():
     optimizer = FireFlyOptim(
         model.parameters(),
         lr_dense=args.learning_rate,
-        base_ratio=args.base_ratio,
+        snr_threshold=args.snr_threshold,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )
