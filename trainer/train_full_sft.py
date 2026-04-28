@@ -153,10 +153,10 @@ def main():
         "--batch_size", type=int, default=32, help="Training batch size per GPU"
     )
     parser.add_argument(
-        "--learning_rate", type=float, default=1e-4, help="Initial learning rate"
+        "--learning_rate", type=float, default=8e-5, help="Initial learning rate"
     )
     parser.add_argument(
-        "--warmup_steps", type=int, default=2000, help="Number of warmup steps"
+        "--warmup_steps", type=int, default=4000, help="Number of warmup steps"
     )
     parser.add_argument(
         "--accumulation_steps",
@@ -167,7 +167,7 @@ def main():
     parser.add_argument(
         "--base_ratio",
         type=float,
-        default=0.02,
+        default=0.006,
         help="Base ratio for FireFly optimizer (between 0 and 1)",
     )
     parser.add_argument(
