@@ -73,7 +73,7 @@ def train_epoch(
             epoch * iters + step,
             args.epochs * iters,
             args.base_ratio,
-            warmup_steps=args.warmup_steps,
+            warmup_steps=0,  # no warmup — start at peak for max early exploration
         )
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
