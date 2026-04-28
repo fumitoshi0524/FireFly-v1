@@ -21,7 +21,7 @@ from trainer.train_util import (
     init_model,
 )
 
-from FireFly.fireflyoptim import FireFlyProb
+from FireFly.fireflyoptim import FireFlyOptim
 from FireFly.bitLinear import collect_bitlinear_modules
 
 from itertools import islice
@@ -72,9 +72,16 @@ def train_epoch(
             args.learning_rate,
             warmup_steps=args.warmup_steps,
         )
+        base_ratio = get_lr(
+            epoch * iters + step,
+            args.epochs * iters,
+            args.base_ratio,
+            warmup_steps=args.warmup_steps,
+        )
 
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
+            param_group["base_ratio"] = base_ratio
 
         with torch.amp.autocast(device_type=args.device, dtype=torch.bfloat16):
             outputs = model(input_ids, labels=labels)
@@ -92,13 +99,15 @@ def train_epoch(
             eta_time = spend_time / max(1, step - start_step) * (iters - step) // 60
             Logger(
                 f"Epoch:[{epoch + 1}/{args.epochs}]({step}/{iters}), "
-                f"loss: {loss.item() * accumulation_steps:.4f}, lr: {lr:.8f}, eta: {eta_time:.1f}min"
+                f"loss: {loss.item() * accumulation_steps:.4f}, lr: {lr:.8f}, "
+                f"br: {base_ratio:.6f}, eta: {eta_time:.1f}min"
             )
             if swanlab is not None:
                 swanlab.log(
                     {
                         "train/loss": loss.item() * accumulation_steps,
                         "train/lr": lr,
+                        "train/base_ratio": base_ratio,
                         "train/eta_min": eta_time,
                     },
                     step=epoch * iters + step,
@@ -171,8 +180,8 @@ def main():
     parser.add_argument(
         "--base_ratio",
         type=float,
-        default=0.008,
-        help="Base ratio for FireFly optimizer (between 0 and 1)",
+        default=0.01,
+        help="Peak fraction of ternary weights to flip per optimizer step (follows warmup+cosine schedule)",
     )
     parser.add_argument(
         "--device",
@@ -291,7 +300,7 @@ def main():
     train_ds = PretrainDataset(
         args.data_path, tokenizer, max_length=args.max_seq_length
     )
-    optimizer = FireFlyProb(
+    optimizer = FireFlyOptim(
         model.parameters(),
         lr_dense=args.learning_rate,
         base_ratio=args.base_ratio,
