@@ -168,7 +168,7 @@ def main():
     parser.add_argument(
         "--step_size",
         type=float,
-        default=1.0,
+        default=10.0,
         help="Stochastic rounding step size for ternary weight flips. P(flip) = clamp(η·|m_hat|, 0, 1). Larger = more aggressive.",
     )
     parser.add_argument(
