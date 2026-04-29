@@ -148,10 +148,10 @@ def main():
         "--save_weight", type=str, default="full_sft", help="Checkpoint weight name"
     )
     parser.add_argument(
-        "--epochs", type=int, default=2, help="Number of training epochs"
+        "--epochs", type=int, default=1, help="Number of training epochs"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=32, help="Training batch size per GPU"
+        "--batch_size", type=int, default=24, help="Training batch size per GPU"
     )
     parser.add_argument(
         "--learning_rate", type=float, default=8e-5, help="Initial learning rate"
