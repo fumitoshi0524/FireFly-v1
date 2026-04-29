@@ -195,19 +195,19 @@ def main():
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=1024,
+        default=1536,
         help="Hidden size of the model",
     )
     parser.add_argument(
         "--num_hidden_layers",
         type=int,
-        default=16,
+        default=20,
         help="Number of transformer layers",
     )
     parser.add_argument(
         "--max_seq_length",
         type=int,
-        default=340,
+        default=512,
         help="Maximum sequence length",
     )
     parser.add_argument(
