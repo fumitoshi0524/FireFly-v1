@@ -172,7 +172,13 @@ def main():
         "--lr_ternary",
         type=float,
         default=0.01,
-        help="Learning rate for ternary weight updates via DQT stochastic rounding. P(flip) = clamp(|lr * m_hat/√v_hat|, 0, 1).",
+        help="Learning rate for ternary weight updates. Scales the Adam update accumulated into the OU residual.",
+    )
+    parser.add_argument(
+        "--theta",
+        type=float,
+        default=0.1,
+        help="OU mean-reversion rate for the ternary residual. 0 = no decay, 1 = no memory. Higher = faster decay of old gradient signals.",
     )
     parser.add_argument(
         "--device",
@@ -295,6 +301,7 @@ def main():
         model.parameters(),
         lr_dense=args.learning_rate,
         lr_ternary=args.lr_ternary,
+        theta=args.theta,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )
