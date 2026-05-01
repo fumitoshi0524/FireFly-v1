@@ -168,7 +168,7 @@ def main():
     parser.add_argument(
         "--lr_int8",
         type=float,
-        default=0.01,
+        default=1e-5,
         help="Learning rate for integer-step updates on INT8 weights.",
     )
     parser.add_argument(
