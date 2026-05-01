@@ -166,10 +166,10 @@ def main():
         help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
-        "--lr_ternary",
+        "--lr_int8",
         type=float,
         default=0.01,
-        help="Learning rate for ternary weight updates. P(flip) = clamp(lr_ternary × |m_hat|/√v_hat, 0, 1).",
+        help="Learning rate for integer-step updates on INT8 weights.",
     )
     parser.add_argument(
         "--device",
@@ -283,7 +283,7 @@ def main():
     optimizer = FireFlyOptim(
         model.parameters(),
         lr_dense=args.learning_rate,
-        lr_ternary=args.lr_ternary,
+        lr_int8=args.lr_int8,
         clip_grad=args.clip_grad,
         bit_modules=collect_bitlinear_modules(model),
     )
