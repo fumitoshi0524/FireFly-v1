@@ -15,12 +15,6 @@ wheels/
 # uv self generated files
 uv.lock
 
-# built kernel files
-kernels/build/
-kernels/build-ninja-msvc/
-
-build_local_cuda.bat
-
 # vscode settings
 .vscode/
 
