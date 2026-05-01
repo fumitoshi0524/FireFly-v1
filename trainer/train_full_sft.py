@@ -172,6 +172,12 @@ def main():
         help="Learning rate for integer-step updates on INT8 weights.",
     )
     parser.add_argument(
+        "--theta",
+        type=float,
+        default=0.0,
+        help="OU mean-reversion rate for the residual accumulator (0 = disabled).",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default="cuda",
@@ -285,6 +291,7 @@ def main():
         lr_dense=args.learning_rate,
         lr_int8=args.lr_int8,
         clip_grad=args.clip_grad,
+        theta=args.theta,
         bit_modules=collect_bitlinear_modules(model),
     )
 
