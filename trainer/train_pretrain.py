@@ -169,10 +169,10 @@ def main():
         help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
-        "--lr_int8",
+        "--weight_decay",
         type=float,
-        default=1e-2,
-        help="Learning rate for integer-step updates on INT8 weights.",
+        default=1e-1,
+        help="Weight decay (AdamW).",
     )
     parser.add_argument(
         "--theta",
@@ -191,9 +191,6 @@ def main():
         type=str,
         default="bfloat16",
         help="Data type for training (e.g., 'float32' or 'bfloat16')",
-    )
-    parser.add_argument(
-        "--clip_grad", type=float, default=1.0, help="Max norm for gradient clipping"
     )
     parser.add_argument(
         "--log_interval",
@@ -299,9 +296,8 @@ def main():
     )
     optimizer = FireFlyOptim(
         model.parameters(),
-        lr_dense=args.learning_rate,
-        lr_int8=args.lr_int8,
-        clip_grad=args.clip_grad,
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay,
         theta=args.theta,
         bit_modules=collect_bitlinear_modules(model),
     )

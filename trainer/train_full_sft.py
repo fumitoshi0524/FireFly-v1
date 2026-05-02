@@ -166,10 +166,10 @@ def main():
         help="Gradient accumulation steps. 0 means disabled.",
     )
     parser.add_argument(
-        "--lr_int8",
+        "--weight_decay",
         type=float,
-        default=1e-2,
-        help="Learning rate for integer-step updates on INT8 weights.",
+        default=1e-1,
+        help="Weight decay (AdamW).",
     )
     parser.add_argument(
         "--theta",
@@ -288,9 +288,8 @@ def main():
     train_ds = SFTDataset(args.data_path, tokenizer, max_length=args.max_seq_length)
     optimizer = FireFlyOptim(
         model.parameters(),
-        lr_dense=args.learning_rate,
-        lr_int8=args.lr_int8,
-        clip_grad=args.clip_grad,
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay,
         theta=args.theta,
         bit_modules=collect_bitlinear_modules(model),
     )
