@@ -153,25 +153,21 @@ class Attention(nn.Module):
             config.hidden_size,
             config.num_attention_heads * self.head_dim,
             bias=False,
-            n0prob=0.5,
         )
         self.k_proj = BitLinear(
             config.hidden_size,
             self.num_key_value_heads * self.head_dim,
             bias=False,
-            n0prob=0.5,
         )
         self.v_proj = BitLinear(
             config.hidden_size,
             self.num_key_value_heads * self.head_dim,
             bias=False,
-            n0prob=0.5,
         )
         self.o_proj = BitLinear(
             config.num_attention_heads * self.head_dim,
             config.hidden_size,
             bias=False,
-            n0prob=0.5,
         )
         self.q_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
         self.k_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
@@ -243,13 +239,13 @@ class FeedForward(nn.Module):
         super().__init__()
         intermediate_size = intermediate_size or config.intermediate_size
         self.gate_proj = BitLinear(
-            config.hidden_size, intermediate_size, bias=False, n0prob=0.5
+            config.hidden_size, intermediate_size, bias=False
         )
         self.down_proj = BitLinear(
-            intermediate_size, config.hidden_size, bias=False, n0prob=0.5
+            intermediate_size, config.hidden_size, bias=False
         )
         self.up_proj = BitLinear(
-            config.hidden_size, intermediate_size, bias=False, n0prob=0.5
+            config.hidden_size, intermediate_size, bias=False
         )
         self.act_fn = ACT2FN[config.hidden_act]
 

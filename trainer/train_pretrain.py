@@ -171,14 +171,8 @@ def main():
     parser.add_argument(
         "--lr_int8",
         type=float,
-        default=1e-5,
+        default=1e-2,
         help="Learning rate for integer-step updates on INT8 weights.",
-    )
-    parser.add_argument(
-        "--weight_decay",
-        type=float,
-        default=1e-3,
-        help="Weight decay for weight_scale parameters to prevent explosion.",
     )
     parser.add_argument(
         "--theta",
@@ -309,7 +303,6 @@ def main():
         lr_int8=args.lr_int8,
         clip_grad=args.clip_grad,
         theta=args.theta,
-        weight_decay=args.weight_decay,
         bit_modules=collect_bitlinear_modules(model),
     )
 
