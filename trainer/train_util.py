@@ -14,7 +14,6 @@ from model.model_firefly import FireFlyForCausalLM
 
 def get_model_params(model):
     total = sum(p.numel() for p in model.parameters())
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     bit_modules = [m for m in model.modules() if hasattr(m, "int_weight")]
     bit_dense_equivalent = sum(m.out_features * m.in_features for m in bit_modules)
@@ -22,10 +21,10 @@ def get_model_params(model):
     bit_scale_bytes = sum(int(m.weight_scale.numel()) * 4 for m in bit_modules)
 
     Logger(f"Model Params (nn.Parameter): {total / 1e6:.2f}M")
-    Logger(f"Trainable Params (nn.Parameter): {trainable / 1e6:.2f}M")
+
     Logger(f"INT8 Weights (dense-equivalent): {bit_dense_equivalent / 1e6:.2f}M")
     Logger(
-        f"INT8 Weight Storage: {(bit_int8_bytes + bit_scale_bytes) / (1024 ** 2):.2f} MB"
+        f"INT8 Weight Storage: {(bit_int8_bytes + bit_scale_bytes) / (1024**2):.2f} MB"
     )
     Logger(
         f"Effective Params (dense-equivalent): {(total + bit_dense_equivalent) / 1e6:.2f}M"

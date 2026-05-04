@@ -224,7 +224,9 @@ class Attention(nn.Module):
                     (seq_len, seq_len), float("-inf"), device=scores.device
                 ).triu(1)
             if attention_mask is not None:
-                attn_mask = attention_mask.to(dtype=scores.dtype).unsqueeze(1).unsqueeze(2)
+                attn_mask = (
+                    attention_mask.to(dtype=scores.dtype).unsqueeze(1).unsqueeze(2)
+                )
                 scores += (1.0 - attn_mask) * -1e9
             output = (
                 self.attn_dropout(F.softmax(scores.float(), dim=-1).type_as(xq)) @ xv
@@ -238,15 +240,9 @@ class FeedForward(nn.Module):
     def __init__(self, config: FireFlyConfig, intermediate_size: int = None):
         super().__init__()
         intermediate_size = intermediate_size or config.intermediate_size
-        self.gate_proj = BitLinear(
-            config.hidden_size, intermediate_size, bias=False
-        )
-        self.down_proj = BitLinear(
-            intermediate_size, config.hidden_size, bias=False
-        )
-        self.up_proj = BitLinear(
-            config.hidden_size, intermediate_size, bias=False
-        )
+        self.gate_proj = BitLinear(config.hidden_size, intermediate_size, bias=False)
+        self.down_proj = BitLinear(intermediate_size, config.hidden_size, bias=False)
+        self.up_proj = BitLinear(config.hidden_size, intermediate_size, bias=False)
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
