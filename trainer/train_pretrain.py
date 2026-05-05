@@ -174,12 +174,7 @@ def main():
         default=1e-1,
         help="Weight decay (AdamW).",
     )
-    parser.add_argument(
-        "--theta",
-        type=float,
-        default=0.0,
-        help="OU mean-reversion rate for the residual accumulator (0 = disabled).",
-    )
+
     parser.add_argument(
         "--device",
         type=str,
@@ -298,7 +293,6 @@ def main():
         model.parameters(),
         lr=args.learning_rate,
         weight_decay=args.weight_decay,
-        theta=args.theta,
         bit_modules=collect_bitlinear_modules(model),
     )
 
